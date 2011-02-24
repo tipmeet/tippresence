@@ -3,7 +3,7 @@
 import json
 
 from twisted.internet import defer
-from twisted.web import resource, server
+from twisted.web import resource, server, http
 
 from tippresence import stats
 from tippresence import aggregate_status
@@ -15,8 +15,9 @@ success_reply = {'status': 'ok', 'reason': 'Success'}
 
 class HTTPPresence(resource.Resource):
     isLeaf = True
-    def __init__(self, presence):
+    def __init__(self, presence, users=None):
         self.presence = presence
+        self.users = users or {}
 
     def _filterPath(self, path):
         return [x for x in path if x]
@@ -27,11 +28,15 @@ class HTTPPresence(resource.Resource):
         if len(path) == 1:
             return self.getStatus(request.write, request.finish, path[0])
         elif len(path) == 0:
+            if not self.authenticate(request):
+                return json.dumps({'status': 'failure', 'reason': 'auth required'})
             return self.dumpStatuses(request.write, request.finish)
         return json.dumps({'reason': 'Invalid URI', 'status': 'failure'})
 
     def render_PUT(self, request):
         stats['http_received_requests'] += 1
+        if not self.authenticate(request):
+            return json.dumps({'status': 'failure', 'reason': 'auth required'})
         path = self._filterPath(request.postpath)
         if len(path) == 1:
             return self.putStatus(request.write, request.finish, path[0], request.content)
@@ -41,6 +46,8 @@ class HTTPPresence(resource.Resource):
 
     def render_DELETE(self, request):
         stats['http_received_requests'] += 1
+        if not self.authenticate(request):
+            return json.dumps({'status': 'failure', 'reason': 'auth required'})
         path = self._filterPath(request.postpath)
         if len(path) == 2:
             return self.removeStatus(request.write, request.finish, path[0], path[1])
@@ -48,10 +55,28 @@ class HTTPPresence(resource.Resource):
 
     def render_POST(self, request):
         stats['http_received_requests'] += 1
+        if not self.authenticate(request):
+            return json.dumps({'status': 'failure', 'reason': 'auth required'})
         path = self._filterPath(request.postpath)
         if path:
             return json.dumps({'status': 'failure', 'reason': 'Invalid URI'})
         return self.putAllStatuses(request.write, request.finish, request.content)
+
+    def authenticate(self, request):
+        if not self.users:
+            return 1
+        user, password = request.getUser(), request.getPassword()
+        if not user or not password:
+            log.msg("AUTH: Request without auth token")
+            request.setResponseCode(http.UNAUTHORIZED)
+            return
+        if user not in self.users:
+            log.msg("AUTH: User %s not found" % user)
+            return
+        if password != self.users[user]:
+            log.msg("AUTH: Invalid password for user %s" % user)
+            return
+        return 1
 
     def getStatus(self, write, finish, resource):
         def reply(status):
