@@ -45,6 +45,7 @@ class PresenceServiceError(Exception):
 
 class PresenceService(object):
     MAX_EXPIRE_TIME = 3900
+    table_aggregated_statuses = "sys:aggregated_statuses"
 
     def __init__(self, storage):
         storage.addCallbackOnConnected(self._loadStatusTimers)
@@ -67,6 +68,7 @@ class PresenceService(object):
         d3 = self._notifyWatchers(resource)
         d4 = self._setStatusTimer(resource, tag, expires)
         yield defer.DeferredList([d1, d2, d3, d4])
+        yield self._aggregate(resource)
         stats['presence_put_statuses'] += 1
         log.msg("Put status (resource: %r, tag: %r, presence document: %r, expires: %r, priority: %r) ==> result: ok" %\
                 (resource, tag, pdoc, expires, priority))
@@ -143,6 +145,43 @@ class PresenceService(object):
 
     def watch(self, callback, *args, **kwargs):
         self._callbacks.append((callback, args, kwargs))
+
+    @defer.inlineCallbacks
+    def _aggregate(self, resource):
+        statuses = yield self._getStatuses(resource)
+        statuses = yield self._removeExpiredStatuses(resource, statuses)
+        if not statuses:
+            debug("Aggregate status for resource %r. No statuses found.")
+        else:
+            aggregated_status = self._aggregateStatuses(statuses)
+            yield self.storage.hset(self.table_aggregated_statuses, resource, aggregated_status[1].serialize())
+
+    def _aggregateStatuses(self, statuses):
+        result = max(statuses, key=lambda x: utils.status_keyf(x[1]))
+        debug("Aggregate statuses %r => %r" % (statuses, result))
+        return result
+
+    @defer.inlineCallbacks
+    def _getStatuses(self, resource):
+        table = self._resourceTable(resource)
+        try:
+            r = yield self.storage.hgetall(table)
+        except KeyError:
+            debug("Get statuses for resource %r: no statuses found" % resource)
+            defer.returnValue([])
+        statuses = [(tag, Status.parse(x)) for (tag,  x) in r.iteritems()]
+        debug("Get statuses for resource %r: %r" % (resource, statuses))
+        defer.returnValue(statuses)
+
+    def _removeExpiredStatuses(self, resource, statuses):
+        active, expired = self._splitExpiredStatuses(statuses)
+        debug("Remove expired statuses for %r. All statuses %r" % (resource, statuses))
+        if expired:
+            debug("Remove expired statuses for %r. Expired statuses found %r. Cleaning..." % (resource, expired))
+            for tag, _ in expired:
+                self.removeStatus(resource, tag)
+        debug("Remove expired statuses for %r. Active statuses %r" % (resource, active))
+        return active
 
     def _splitExpiredStatuses(self, statuses):
         active = []
