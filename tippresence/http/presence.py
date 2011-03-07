@@ -68,6 +68,7 @@ class HTTPPresence(resource.Resource):
         user, password = request.getUser(), request.getPassword()
         if not user or not password:
             log.msg("AUTH: Request without auth token")
+            request.setHeader('WWW-Authenticate', 'Basic realm="tippresence"')
             request.setResponseCode(http.UNAUTHORIZED)
             return
         if user not in self.users:
