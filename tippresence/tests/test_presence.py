@@ -24,9 +24,9 @@ class PresenceServerTest(unittest.TestCase):
 
     @defer.inlineCallbacks
     def test_statusExpires(self):
-        yield self.presence.putStatus('ivaxer@tipmeet.com', '', tag='forwarding', expires=0.01)
-        yield self.presence.putStatus('ivaxer@tipmeet.com', '', tag='calendar', expires=0.01)
-        yield self.presence.putStatus('ivaxer@tipmeet.com', '', tag='rand', expires=0.01)
+        yield self.presence.putStatus('ivaxer@tipmeet.com', {'status': 'online'}, tag='forwarding', expires=0.01)
+        yield self.presence.putStatus('ivaxer@tipmeet.com', {'status': 'online'}, tag='calendar', expires=0.01)
+        yield self.presence.putStatus('ivaxer@tipmeet.com', {'status': 'online'}, tag='rand', expires=0.01)
         d = defer.Deferred()
         reactor.callLater(0.02, d.callback, None)
         yield d
