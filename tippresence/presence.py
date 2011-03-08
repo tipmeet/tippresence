@@ -42,19 +42,25 @@ class PresenceService(object):
 
     @defer.inlineCallbacks
     def put(self, resource, status, expires=DEFAULT_EXPIRES, priority=0, tag=None):
+        debug("PUT | Received put request: resource %r, status %r, expires %r, priority %r, tag %r" %\
+                (resource, status, expires, priority, tag))
         self.stats_put += 1
-        if expires > self.MAX_EXPIRES:
-            raise PresenceServiceError("Expire limit exeeded")
-        if status not in self.allowed_statuses:
-            raise PresenceServiceError("Unknown status value: %r. Allowed: %r" % (status, self.allowed_statuses))
         if not tag:
             tag = utils.random_str(10)
+            debug("PUT | %s | Generate tag for presence: %r." % (resource, tag))
+        if expires > self.MAX_EXPIRES:
+            debug("PUT | %s:%s | Max expires time exceeded. Requested %r, allowed %r. Raise exception" %\
+                    (resource, tag, expires, self.MAX_EXPIRES))
+            raise PresenceError("Expire limit exeeded")
+        if status not in self.allowed_statuses:
+            debug("PUT | %s:%s | Unknown status value: %r. Allowed statuses: %r. Raise exception." %\
+                    (resource, tag, status, self.allowed_statuses))
+            raise PresenceError("Unknown status value: %r. Allowed: %r" % (status, self.allowed_statuses))
         expires_at = expires + reactor.seconds()
-        presence = {"status": status, "expires_at": expires_at, "priority": priority, "tag": tag}
-        yield self._storePresence(resource, tag, presence)
-        yield self._aggregatePresence(resource)
-        log.msg("Put presence for resource %r (tag %r): status %r, expires %r, priority %r." %\
-                (resource, tag, status, expires, priority))
+        debug("PUT | %s:%s | Presence status expires at %s" % (resource, tag, expires_at))
+        presence = {"status": status, "expires": expires, "expires_at": expires_at, "priority": priority, "tag": tag}
+        debug("PUT | %s:%s | Constructed presence: %r" % (resource, tag, presence))
+        yield self._putPresence(resource, tag, presence)
         defer.returnValue(tag)
 
     @defer.inlineCallbacks
