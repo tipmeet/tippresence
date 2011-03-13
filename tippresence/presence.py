@@ -14,11 +14,9 @@ def debug(msg):
 def calc_expires_at(expires):
     return reactor.seconds() + expires
 
-class PresenceServiceError(Exception):
+class PresenceError(Exception):
     pass
 
-class PresenceNotFound(PresenceServiceError):
-    pass
 
 class PresenceService(object):
     MAX_EXPIRES = 3900
