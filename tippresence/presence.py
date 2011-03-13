@@ -79,13 +79,25 @@ class PresenceService(object):
 
     @defer.inlineCallbacks
     def get(self, resource, tag=None):
+        debug("GET | %s:%s | Received get request: resource %r, tag %r" %\
+                (resource, tag, resource, tag))
         self.stats_get += 1
+        presence = None
         if tag:
             presence = yield self._getPresence(resource, tag)
+            debug("GET | %s:%s | Loaded presence for tag: %r" % (resource, tag, presence))
+        else:
+            presence_list = yield self._getAllPresence(resource)
+            debug("GET | %s:%s | Dumped all presence information: %r" % (resource, tag, presence_list))
+            if presence_list:
+                presence = max(presence_list, key=utils.presence_keyf)
+                debug("GET | %s:%s | Aggregated presence: %r" % (resource, tag, presence))
+        if presence:
+            debug("GET | %s:%s | Presence for resource %r with tag %r: %r." %\
+                    (resource, tag, resource, tag, presence))
             defer.returnValue(presence)
-        presence = yield self._getAggregatedPresence(resource)
-        log.msg("Get presence for resource %r: %r." % (resource, presence))
-        defer.returnValue(presence)
+        debug("GET | %s:%s | Presence for resource %r with tag %r not found." %\
+                (resource, tag, resource, tag))
 
     def dump(self):
         raise NotImplementedError
