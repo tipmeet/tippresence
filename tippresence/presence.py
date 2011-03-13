@@ -27,7 +27,7 @@ class PresenceService(object):
     _key_resources = "resources"
 
     def __init__(self, storage):
-        storage.addCallbackOnConnected(self._loadStatusTimers)
+        storage.addCallbackOnConnected(self._recoverExpireTimers)
         self.storage = storage
         self._watch_callbacks = []
         self._expires_timers = {}
