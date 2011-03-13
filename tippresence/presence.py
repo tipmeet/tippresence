@@ -121,14 +121,6 @@ class PresenceService(object):
         self._watch_callbacks.append((callback, args, kwargs))
 
     @defer.inlineCallbacks
-    def _aggregatePresence(self, resource):
-        defer.returnValue(None)
-        statuses = yield self._getAllStatuses(resource)
-        if not statuses:
-            debug("Aggregate presence for resource %r. Nothing to do.")
-        else:
-            aggregated_status = self._aggregateStatuses(statuses)
-            yield self.storage.hset(self.table_aggregated_statuses, resource, aggregated_status[1].serialize())
     def _storePresence(self, resource, tag, presence):
         expires = presence['expires']
         expires_at = calc_expires_at(expires)
@@ -144,10 +136,6 @@ class PresenceService(object):
                 (resource, tag, resource, self._key_resources))
         yield self.storage.sadd(self._key_resources, resource)
 
-    def _aggregateStatuses(self, presence):
-        aggregated = max(statuses, key=utils.status_keyf)
-        debug("Aggregate presence %r => %r" % (presence, aggregated))
-        return aggregated
     @defer.inlineCallbacks
     def _updatePresenceExpires(self, resource, tag, expires):
         expires_at = calc_expires_at(expires)
@@ -181,8 +169,6 @@ class PresenceService(object):
         defer.returnValue(presence)
 
     @defer.inlineCallbacks
-    def _getAggregatedPresence(self, resource):
-        table = self.ht_aggregated_presence % resource
     def _removePresence(self, resource, tag):
         key = self._key_presence % (resource, tag)
         resource_presence_key = self._key_resource_presence % resource
@@ -200,11 +186,6 @@ class PresenceService(object):
             defer.returnValue(1)
 
     @defer.inlineCallbacks
-    def _storePresence(self, resource, tag, presence):
-        presence_table = self.ht_presence % (resource, tag)
-        presence_set = self.set_resource_presence % resource
-        yield self.storage.hsetn(presence_table, presence)
-        yield self.storage.sadd(presence_set, tag)
     def _getAllPresence(self, resource):
         resource_presence_key = self._key_resource_presence % resource
         try:
@@ -228,17 +209,8 @@ class PresenceService(object):
                     (resource, tag, resource, presence_list))
             defer.returnValue(presence_list)
 
-    @defer.inlineCallbacks
-    def _removePresence(self, resource, tag):
-        presence_table = self.ht_presence % (resource, tag)
-        presence_set = self.set_resource_presence % resource
-        yield self.storage.srem(presence_set, tag)
-        yield self.storage.hdrop(presence_table)
 
     @defer.inlineCallbacks
-    def _updateExpiresAt(self, resource, tag, expires_at):
-        presence_table = self.ht_presence % (resource, tag)
-        yield self.storage.hset(presence_table, "expires_at", expires_at)
 
     @defer.inlineCallbacks
     def _setExpireTimer(self, resource, tag, delay, memonly=False):
