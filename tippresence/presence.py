@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import json
-
-import utils
-
 from twisted.internet import reactor, defer
 from twisted.python import log
+
+import utils
 
 def debug(msg):
     if __debug__:
