@@ -11,8 +11,6 @@ from txamqp.client import TwistedDelegate
 from txamqp.content import Content
 import txamqp.spec
 
-from tippresence import aggregate_status
-
 SPECFILE = resource_filename(__name__, 'amqp0-8.xml')
 
 class AMQPublisher(object):
@@ -20,13 +18,16 @@ class AMQPublisher(object):
     routing_key = 'presence_changes'
 
     def __init__(self, factory, presence_service):
-        presence_service.watch(self.statusChanged)
+        presence_service.watch(self.presenceChanged)
         self.factory = factory
 
     @defer.inlineCallbacks
-    def statusChanged(self, resource, status):
-        r = aggregate_status(status)
-        msg = json.dumps([resource, r])
+    def presenceChanged(self, resource, presence):
+        if presence:
+            status = presence['status']
+        else:
+            status = "offline"
+        msg = json.dumps([resource, {'presence': {'status': status}}])
         yield self.factory.publish(self.exchange_name, msg, self.routing_key)
 
 
