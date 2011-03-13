@@ -148,6 +148,21 @@ class PresenceService(object):
         aggregated = max(statuses, key=utils.status_keyf)
         debug("Aggregate presence %r => %r" % (presence, aggregated))
         return aggregated
+    @defer.inlineCallbacks
+    def _updatePresenceExpires(self, resource, tag, expires):
+        expires_at = calc_expires_at(expires)
+        key = self._key_presence % (resource, tag)
+        try:
+            yield self.storage.hget(key, "tag")
+        except KeyError:
+            debug("STORE | %s:%s | Caught KeyError exception from storage backend. Presence not found." %\
+                    (resource, tag))
+            defer.returnValue(None)
+        debug("STORE | %s:%s | Update expires to %r (expires at %r) for key %r" %\
+                (resource, tag, expires, expires_at, key))
+        yield self.storage.hset(key, "expires", expires)
+        yield self.storage.hset(key, "expires_at", expires_at)
+        defer.returnValue(1)
 
     @defer.inlineCallbacks
     def _getPresence(self, resource, tag):
