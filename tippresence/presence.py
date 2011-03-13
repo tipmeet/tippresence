@@ -30,7 +30,7 @@ class PresenceService(object):
         storage.addCallbackOnConnected(self._loadStatusTimers)
         self.storage = storage
         self._watch_callbacks = []
-        self._status_timers = {}
+        self._expires_timers = {}
         self.stats_put = 0
         self.stats_update = 0
         self.stats_get = 0
