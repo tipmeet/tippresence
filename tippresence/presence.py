@@ -21,10 +21,10 @@ class PresenceError(Exception):
 class PresenceService(object):
     MAX_EXPIRES = 3900
     DEFAULT_EXPIRES = 3600
-    ht_presence = "presence:%s:%s"
-    set_resource_presence = "set:presence:%s"
-    ht_aggregated_presence = "aggregated_presence:%s"
     allowed_statuses = ["online", "offline"]
+    _key_presence = "presence:%s:%s"
+    _key_resource_presence = "resource_presence:%s"
+    _key_resources = "resources"
 
     def __init__(self, storage):
         storage.addCallbackOnConnected(self._loadStatusTimers)
