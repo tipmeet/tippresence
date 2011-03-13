@@ -259,13 +259,17 @@ class PresenceService(object):
         debug("TIMER_RECOVER | Done.")
 
     @defer.inlineCallbacks
+    def _notifyWatchers(self, resource):
+        debug("NOTIFY | %s | Notify watchers about resource %r presence." % (resource, resource))
+        presence_list = yield self._getAllPresence(resource)
+        if not presence_list:
+            self._sendPresence(resource, None)
             defer.returnValue(None)
+        presence = max(presence_list, key=utils.presence_keyf)
+        self._sendPresence(resource, presence)
 
-    @defer.inlineCallbacks
-    def _notifyWatchers(self, resource, status=None):
-        if not status:
-            status = yield self.getStatus(resource)
+    def _sendPresence(self, resource, presence):
+        debug("NOTIFY | %s | Send presence %r of resource %r to all watchers." % (resource, presence, resource))
         for callback, arg, kw in self._watch_callbacks:
-            callback(resource, status, *arg, **kw)
-
+            callback(resource, presence, *arg, **kw)
 
