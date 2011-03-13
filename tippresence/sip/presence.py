@@ -5,7 +5,6 @@ from collections import defaultdict
 
 from twisted.internet import reactor, defer
 
-from tippresence import aggregate_status
 from tipsip import SIPUA, SIPError
 from tipsip.header import Header
 
@@ -15,13 +14,15 @@ s2p = {
         'offline':  'closed',
         }
 
-def status2pidf(resource, statuses):
+def presence2pidf(resource, presence):
     pidf = []
     a = pidf.append
-    status = aggregate_status(statuses)
     a('<?xml version="1.0" encoding="UTF-8"?>')
     a('<presence xmlns="urn:ietf:params:xml:ns:pidf" entity="pres:%s">' % resource)
-    s = s2p[status['presence']['status']]
+    if presence:
+        s = s2p[presence['status']]
+    else:
+        s = "closed"
     a('\t<tuple id="%s">' % resource)
     a('\t\t<status>')
     a('\t\t\t<basic>%s</basic>' % s)
@@ -71,12 +72,12 @@ class SIPPresence(SIPUA):
             raise SIPError(423, 'Interval Too Brief')
 
         if expires == 0:
-            r = yield self.presence_service.removeStatus(resource, tag)
-            if r == 'not_found':
+            r = yield self.presence_service.remove(resource, tag)
+            if not r:
                 raise SIPError(412, 'Conditional Request Failed')
         elif tag:
-            r = yield self.presence_service.updateStatus(resource, tag, expires)
-            if r == 'not_found':
+            r = yield self.presence_service.update(resource, tag, expires)
+            if not r:
                 raise SIPError(412, 'Conditional Request Failed')
         else:
             tag = yield self.putStatus(resource, pidf, expires, tag)
@@ -86,13 +87,17 @@ class SIPPresence(SIPUA):
         self.sendResponse(response)
 
     @defer.inlineCallbacks
+    def handle_REGISTER(self, request):
+        raise SIPError(200, "OK")
+
+    @defer.inlineCallbacks
     def putStatus(self, resource, pidf, expires, tag):
         pidf = ''.join(pidf.split())
         if self.online_re.match(pidf):
-            presence = {'status': 'online'}
+            status = 'online'
         else:
-            presence = {'status': 'offline'}
-        tag = yield self.presence_service.putStatus(resource, presence, expires, tag=tag)
+            status = 'offline'
+        tag = yield self.presence_service.put(resource, status, expires, tag=tag)
         defer.returnValue(tag)
 
     @defer.inlineCallbacks
@@ -162,8 +167,8 @@ class SIPPresence(SIPUA):
     def createNotify(self, watcher, pidf=None, dialog=None, status='active', expires=None):
         if pidf is None:
             resource = yield self._getResourceByWatcher(watcher)
-            statuses = yield self.presence_service.getStatus(resource)
-            pidf = status2pidf(resource, statuses)
+            presence = yield self.presence_service.get(resource)
+            pidf = presence2pidf(resource, presence)
         if dialog is None:
             dialog = yield self.dialog_store.get(watcher)
             if not dialog:
