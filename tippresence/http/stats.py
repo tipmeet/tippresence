@@ -5,12 +5,21 @@ import json
 from twisted.internet import defer
 from twisted.web import resource
 
-from tippresence import stats
-
 class HTTPStats(resource.Resource):
     isLeaf = True
 
+    def __init__(self, presence_service):
+        self.presence_service = presence_service
+
+    def _dump(self):
+        r = {}
+        r['presence_put'] = self.presence_service.stats_put
+        r['presence_gotten'] = self.presence_service.stats_get
+        r['presence_removed'] = self.presence_service.stats_remove
+        r['presence_updated'] = self.presence_service.stats_update
+        r['presence_dumped'] = self.presence_service.stats_dump
+        return r
+
     def render_GET(self, request):
-        stats['http_received_requests'] += 1
-        return json.dumps(stats.dump(), indent=4)
+        return json.dumps(self._dump(), indent=4)
 
