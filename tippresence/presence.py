@@ -35,6 +35,7 @@ class PresenceService(object):
         self.stats_update = 0
         self.stats_get = 0
         self.stats_remove = 0
+        self.stats_dump = 0
 
     @defer.inlineCallbacks
     def put(self, resource, status, expires=DEFAULT_EXPIRES, priority=0, tag=None):
@@ -100,6 +101,7 @@ class PresenceService(object):
                 (resource, tag, resource, tag))
 
     def dump(self):
+        self.stats_dump += 1
         raise NotImplementedError
 
     @defer.inlineCallbacks
