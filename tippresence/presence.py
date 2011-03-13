@@ -11,6 +11,8 @@ def debug(msg):
     if __debug__:
         log.msg(msg)
 
+def calc_expires_at(expires):
+    return reactor.seconds() + expires
 
 def aggregate_status(statuses):
     raise NotImplementedError
