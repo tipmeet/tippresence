@@ -196,6 +196,28 @@ class PresenceService(object):
         presence_set = self.set_resource_presence % resource
         yield self.storage.hsetn(presence_table, presence)
         yield self.storage.sadd(presence_set, tag)
+    def _getAllPresence(self, resource):
+        resource_presence_key = self._key_resource_presence % resource
+        try:
+            tags = yield self.storage.sgetall(resource_presence_key)
+        except KeyError:
+            debug("STORE | %s | Caught KeyError exception for key %r. Resource not found." %\
+                    (resource, resource_presence_key))
+            defer.returnValue(None)
+        debug("STORE | %s | Gotten tags for resource %r: %r" %\
+                (resource, resource, tags))
+        presence_list = []
+        for tag in tags:
+            presence = yield self._getPresence(resource, tag)
+            if not presence:
+                debug("STORE | %s | Faield to get presence for resource %r with tag %r." %\
+                        (resource, resource, tag))
+            else:
+                presence_list.append(presence)
+        if presence_list:
+            debug("STORE | %s:%s | Gotten all presence for resource %r: %r." %\
+                    (resource, tag, resource, presence_list))
+            defer.returnValue(presence_list)
 
     @defer.inlineCallbacks
     def _removePresence(self, resource, tag):
