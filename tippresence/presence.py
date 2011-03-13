@@ -104,10 +104,18 @@ class PresenceService(object):
 
     @defer.inlineCallbacks
     def remove(self, resource, tag):
+        log.msg("REMOVE | %s:%s | Received remove request: resource %r, tag %r" %\
+                (resource, tag, resource, tag))
         self.stats_remove += 1
-        yield self._removePresence(resource, tag)
-        yield self._aggregatePresence(resource)
-        log.msg("Remove presence for resource %r (tag %r)" % (resource, tag))
+        r = yield self._removePresence(resource, tag)
+        if r:
+            self._cancelExpireTimer(resource, tag)
+            self._notifyWatchers(resource)
+            log.msg("REMOVE | %s:%s | Removed presence for resource %r with tag %r" %\
+                    (resource, tag, resource, tag))
+            defer.returnValue(1)
+        log.msg("REMOVE | %s:%s | Presence for resource %r with tag %r not found." %\
+                (resource, tag, resource, tag))
 
     def watch(self, callback, *args, **kwargs):
         self._watch_callbacks.append((callback, args, kwargs))
