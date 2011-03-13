@@ -166,13 +166,18 @@ class PresenceService(object):
 
     @defer.inlineCallbacks
     def _getPresence(self, resource, tag):
-        table = self.ht_presence % (resource, tag)
+        key = self._key_presence % (resource, tag)
         try:
-            presence = yield self.storage.hgetall(table)
+            presence = yield self.storage.hgetall(key)
+            presence['expires'] = int(presence['expires'])
+            presence['expires_at'] = float(presence['expires_at'])
+            presence['priority'] = int(presence['priority'])
         except KeyError:
-            debug("Get presence for resource %r, tag %r: not found" % (resource, tag))
-            raise PresenceNotFound("No presence for resource %r and tag %r found" % (resource, tag))
-        debug("Get presence for resource %r, tag %r: %r" % (resource, tag, presence))
+            debug("STORE | %s:%s | Caught KeyError exception for key %r. Presence not found." %\
+                    (resource, tag, key))
+            defer.returnValue(None)
+        debug("STORE | %s:%s | Gotten presence for resource %r with tag %r: %r." %\
+                (resource, tag, resource, tag, presence))
         defer.returnValue(presence)
 
     @defer.inlineCallbacks
