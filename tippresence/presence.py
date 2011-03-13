@@ -183,12 +183,21 @@ class PresenceService(object):
     @defer.inlineCallbacks
     def _getAggregatedPresence(self, resource):
         table = self.ht_aggregated_presence % resource
+    def _removePresence(self, resource, tag):
+        key = self._key_presence % (resource, tag)
+        resource_presence_key = self._key_resource_presence % resource
         try:
-            presence = yield self.storage.hgetall(table)
+            yield self.storage.hdrop(key)
         except KeyError:
-            log.msg("Get presence for resource %r: not found" % resource)
-            raise PresenceNotFound("No presence for resource %r found" % resource)
-        defer.returnValue(presence)
+            debug("STORE | %s:%s | Caught KeyError exception for key %r. Presence not found." %\
+                    (resource, tag, key))
+        else:
+            debug("STORE | %s:%s | Remove tag %r from presence list of resource %r." %\
+                    (resource, tag, tag, resource))
+            yield self.storage.srem(resource_presence_key, tag)
+            debug("STORE | %s:%s | Removed presence for resource %r with tag %r." %\
+                    (resource, tag, resource, tag))
+            defer.returnValue(1)
 
     @defer.inlineCallbacks
     def _storePresence(self, resource, tag, presence):
