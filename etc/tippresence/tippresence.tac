@@ -22,7 +22,7 @@ storage = MemoryStorage()
 presence_service = PresenceService(storage)
 
 root = resource.Resource()
-root.putChild("stats", HTTPStats())
+root.putChild("stats", HTTPStats(presence_service))
 root.putChild("presence", HTTPPresence(presence_service, {'guest': 'guest'}))
 http_site = server.Site(root)
 http_service = internet.TCPServer(18082, http_site)
