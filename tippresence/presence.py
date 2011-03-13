@@ -14,10 +14,6 @@ def debug(msg):
 def calc_expires_at(expires):
     return reactor.seconds() + expires
 
-def aggregate_status(statuses):
-    raise NotImplementedError
-
-
 class PresenceServiceError(Exception):
     pass
 
