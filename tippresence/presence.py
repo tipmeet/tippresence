@@ -129,6 +129,20 @@ class PresenceService(object):
         else:
             aggregated_status = self._aggregateStatuses(statuses)
             yield self.storage.hset(self.table_aggregated_statuses, resource, aggregated_status[1].serialize())
+    def _storePresence(self, resource, tag, presence):
+        expires = presence['expires']
+        expires_at = calc_expires_at(expires)
+        presence["expires_at"] = expires_at
+        key = self._key_presence % (resource, tag)
+        debug("STORE | %s:%s | Store presence %r for key %r" % (resource, tag, presence, key))
+        yield self.storage.hsetn(key, presence)
+        resource_presence_key = self._key_resource_presence % resource
+        debug("STORE | %s:%s | Add tag %r to presence list (key %r)" %\
+                (resource, tag, tag, resource_presence_key))
+        yield self.storage.sadd(resource_presence_key, tag)
+        debug("STORE | %s:%s | Add resource %r to resources list (key %r)" %\
+                (resource, tag, resource, self._key_resources))
+        yield self.storage.sadd(self._key_resources, resource)
 
     def _aggregateStatuses(self, presence):
         aggregated = max(statuses, key=utils.status_keyf)
