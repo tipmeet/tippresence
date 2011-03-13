@@ -268,6 +268,4 @@ class PresenceService(object):
         for callback, arg, kw in self._watch_callbacks:
             callback(resource, status, *arg, **kw)
 
-    def _resourceTable(self, resource):
-        return 'res:' + resource
 
