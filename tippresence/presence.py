@@ -62,10 +62,20 @@ class PresenceService(object):
 
     @defer.inlineCallbacks
     def update(self, resource, tag, expires):
+        debug("UPDATE | %s:%s | Received update request: resource %r, tag %r, expires %r" %\
+                (resource, tag, resource, tag, expires))
         self.stats_update += 1
-        expires_at = expires + reactor.seconds()
-        yield self._updateExpiresAt(resource, tag, expires_at)
-        log.msg("Update presence for resource %r (tag: %r): expires: %r." % (resource, tag, expires))
+        if expires > self.MAX_EXPIRES:
+            debug("UPDATE | %s:%s | Max expires time exceeded. Requested %r, allowed %r. Raise exception." %\
+                    (resource, tag, expires, self.MAX_EXPIRES))
+            raise PresenceError("Expire limit exceeded")
+        r = yield self._updatePresenceExpires(resource, tag, expires)
+        if r:
+            self._updateExpireTimer(resource, tag, expires)
+            debug("UPDATE | %s:%s | Update presence for resource %r with tag %r: expires %r" %\
+                    (resource, tag, resource, tag, expires))
+            defer.returnValue(1)
+        debug("UPDATE | %s:%s | Update failed.")
 
     @defer.inlineCallbacks
     def get(self, resource, tag=None):
