@@ -210,6 +210,9 @@ class PresenceService(object):
             defer.returnValue(presence_list)
 
     def _setExpireTimer(self, resource, tag, expires):
+        if (resource, tag) in self._expires_timers:
+            self._updateExpireTimer(resource, tag, expires)
+            return
         tid = reactor.callLater(expires, self._expireTimerCb, resource, tag)
         self._expires_timers[resource, tag] = tid
         debug("TIMER | %s:%s | Timer is set to %r seconds" % (resource, tag, expires))
