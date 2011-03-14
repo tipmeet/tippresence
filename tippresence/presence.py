@@ -34,6 +34,7 @@ class PresenceService(object):
         self.stats_get = 0
         self.stats_remove = 0
         self.stats_dump = 0
+        self.stats_active_presence = 0
 
     @defer.inlineCallbacks
     def put(self, resource, status, expires=DEFAULT_EXPIRES, priority=0, tag=None):
@@ -215,6 +216,7 @@ class PresenceService(object):
             return
         tid = reactor.callLater(expires, self._expireTimerCb, resource, tag)
         self._expires_timers[resource, tag] = tid
+        self.stats_active_presence += 1
         debug("TIMER | %s:%s | Timer is set to %r seconds" % (resource, tag, expires))
 
     @defer.inlineCallbacks
@@ -224,6 +226,7 @@ class PresenceService(object):
         yield self._removePresence(resource, tag)
         self._expires_timers.pop((resource, tag))
         self._notifyWatchers(resource)
+        self.stats_active_presence -= 1
 
     def _updateExpireTimer(self, resource, tag, expires):
         tid = self._expires_timers.get((resource, tag))
@@ -238,6 +241,7 @@ class PresenceService(object):
             raise PresenceError("Timer not found. Cancel faield.")
         tid.cancel()
         self._expires_timers.pop((resource, tag))
+        self.stats_active_presence -= 1
         debug("TIMER | %s:%s | Timer is canceled." % (resource, tag))
 
     @defer.inlineCallbacks
