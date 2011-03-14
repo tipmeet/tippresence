@@ -11,6 +11,10 @@ from twisted.python import log
 
 success_reply = {'status': 'ok', 'reason': 'Success'}
 
+def debug(msg):
+    if __debug__:
+        log.msg(msg)
+
 def response(status='failure', reason='Failed', result=None):
     assert status in ['failure', 'ok']
     return json.dumps({'status': status, 'reason': reason, 'result': result})
@@ -25,6 +29,7 @@ class HTTPPresence(resource.Resource):
         return [x for x in path if x]
 
     def render_GET(self, request):
+        debug("HTTP | Received GET request: %r" % request)
         path = self._filterPath(request.postpath)
         if len(path) == 1:
             return self.getPresence(request, path[0])
@@ -35,6 +40,7 @@ class HTTPPresence(resource.Resource):
         return response("failure", "Invalid URI")
 
     def render_PUT(self, request):
+        debug("HTTP | Received PUT request: %r" % request)
         if not self.authenticate(request):
             return response("failure", "Authentication required")
         path = self._filterPath(request.postpath)
@@ -45,6 +51,7 @@ class HTTPPresence(resource.Resource):
         return response("failure", "Invalid URI")
 
     def render_DELETE(self, request):
+        debug("HTTP | Received DELETE request: %r" % request)
         if not self.authenticate(request):
             return response("failure", "Authentication required")
         path = self._filterPath(request.postpath)
@@ -53,6 +60,7 @@ class HTTPPresence(resource.Resource):
         return response("failure", "Invalid URI")
 
     def render_POST(self, request):
+        debug("HTTP | Received POST request: %r" % request)
         if not self.authenticate(request):
             return response("failure", "Authentication required")
         path = self._filterPath(request.postpath)
