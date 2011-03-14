@@ -18,6 +18,7 @@ class HTTPStats(resource.Resource):
         r['presence_removed'] = self.presence_service.stats_remove
         r['presence_updated'] = self.presence_service.stats_update
         r['presence_dumped'] = self.presence_service.stats_dump
+        r['active_presence'] = self.presence_service.stats_active_presence
         return r
 
     def render_GET(self, request):
