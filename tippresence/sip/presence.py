@@ -55,7 +55,7 @@ class SIPPresence(SIPUA):
         resource = publish.ruri.user + '@' + publish.ruri.host
         expires = publish.headers.get('expires', self.DEFAULT_PUBLISH_EXPIRES)
         expires = int(expires)
-        expires = min(expires, self.presence_service.MAX_EXPIRE_TIME)
+        expires = min(expires, self.presence_service.MAX_EXPIRES)
         pidf = publish.content
         tag = publish.headers.get('SIP-If-Match')
         if publish.headers.get('Event') != 'presence':
