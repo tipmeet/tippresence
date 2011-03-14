@@ -83,7 +83,7 @@ class HTTPPresence(resource.Resource):
                 status = presence["status"]
             else:
                 status = "offline"
-            request.setHeader("X-Presence-Status", status)
+            request.setHeader("X-Presence-Status", str(status))
             request.write(response("ok", "Success", status))
             request.finish()
         d = self.presence.get(resource)

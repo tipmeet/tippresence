@@ -35,11 +35,11 @@ sip_ua = SIPPresence(storage, dialog_store, udp_transport, transaction_layer, pr
 sip_service = internet.UDPServer(5060, udp_transport)
 sip_service.setServiceParent(application)
 
-creds = {"LOGIN": "guest", "PASSWORD": "guest"}
-amq_factory = AMQFactory(creds)
-amq_publisher = AMQPublisher(amq_factory, presence_service)
-amq_client = internet.TCPClient("localhost", 5672, amq_factory)
-amq_client.setServiceParent(application)
+#creds = {"LOGIN": "guest", "PASSWORD": "guest"}
+#amq_factory = AMQFactory(creds)
+#amq_publisher = AMQPublisher(amq_factory, presence_service)
+#amq_client = internet.TCPClient("localhost", 5672, amq_factory)
+#amq_client.setServiceParent(application)
 
 logfile = DailyLogFile("presence.log", "/tmp/tippresence/")
 application.setComponent(ILogObserver, FileLogObserver(logfile).emit)
