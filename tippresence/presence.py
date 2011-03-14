@@ -222,6 +222,7 @@ class PresenceService(object):
         debug("TIMER | %s:%s | Executed presence expire callback. Remove expired presence." %\
                 (resource, tag))
         yield self._removePresence(resource, tag)
+        self._expires_timers.pop((resource, tag))
         self._notifyWatchers(resource)
 
     def _updateExpireTimer(self, resource, tag, expires):
