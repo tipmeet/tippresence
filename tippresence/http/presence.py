@@ -112,7 +112,7 @@ class HTTPPresence(resource.Resource):
             return response("failure", "Invalid data: " + str(e))
         if 'presence' not in r or 'status' not in r['presence']:
             return response("failure", "Presence status required")
-        status = r['status']
+        status = r['presence']['status']
         kw = {}
         if tag:
             kw['tag'] = tag
