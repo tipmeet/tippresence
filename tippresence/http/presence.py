@@ -110,7 +110,7 @@ class HTTPPresence(resource.Resource):
             r = json.load(content)
         except ValueError, e:
             return response("failure", "Invalid data: " + str(e))
-        if 'status' not in r:
+        if 'presence' not in r and 'status' not in r['presence']:
             return response("failure", "Presence status required")
         status = r['status']
         kw = {}
