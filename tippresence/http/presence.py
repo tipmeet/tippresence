@@ -92,7 +92,7 @@ class HTTPPresence(resource.Resource):
             else:
                 status = "offline"
             request.setHeader("X-Presence-Status", str(status))
-            request.write(response("ok", "Success", {'presence': status}))
+            request.write(response("ok", "Success", {'presence': {'status': status}}))
             request.finish()
         d = self.presence.get(resource)
         d.addCallback(reply)
