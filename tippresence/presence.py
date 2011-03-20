@@ -29,6 +29,7 @@ class PresenceService(object):
         self.storage = storage
         self._watch_callbacks = []
         self._expires_timers = {}
+        self._notified_presence = {}
         self.stats_put = 0
         self.stats_update = 0
         self.stats_get = 0
@@ -277,6 +278,12 @@ class PresenceService(object):
     def _notifyWatchers(self, resource):
         debug("NOTIFY | %s | Notify watchers about resource %r presence." % (resource, resource))
         presence = yield self._getAggregatedPresence(resource)
+        if presence == self._notified_presence.get(resource):
+            debug("NOTIFY | %s | Watchers already notified about resource %r presence (%r)" %\
+                    (resource, resource, presence))
+            defer.returnValue(None)
+        else:
+            self._notified_presence[resource] = presence
         self._sendPresence(resource, presence)
 
     def _sendPresence(self, resource, presence):
