@@ -87,11 +87,8 @@ class PresenceService(object):
             presence = yield self._getPresence(resource, tag)
             debug("GET | %s:%s | Loaded presence for tag: %r" % (resource, tag, presence))
         else:
-            presence_list = yield self._getAllPresence(resource)
-            debug("GET | %s:%s | Dumped all presence information: %r" % (resource, tag, presence_list))
-            if presence_list:
-                presence = max(presence_list, key=utils.presence_keyf)
-                debug("GET | %s:%s | Aggregated presence: %r" % (resource, tag, presence))
+            presence = yield self._getAggregatedPresence(resource)
+            debug("GET | %s:%s | Aggregated presence: %r" % (resource, tag, presence))
         if presence:
             debug("GET | %s:%s | Presence for resource %r with tag %r: %r." %\
                     (resource, tag, resource, tag, presence))
@@ -168,6 +165,16 @@ class PresenceService(object):
         debug("STORE | %s:%s | Gotten presence for resource %r with tag %r: %r." %\
                 (resource, tag, resource, tag, presence))
         defer.returnValue(presence)
+
+    @defer.inlineCallbacks
+    def _getAggregatedPresence(self, resource):
+        presence_list = yield self._getAllPresence(resource)
+        debug("STORE | %s | All presence for resource %r: %r" % (resource, resource, presence_list))
+        if presence_list:
+            max_presence = max(presence_list, key=utils.presence_keyf)
+            result = {'status': max_presence['status']}
+            debug("STORE | %s | Aggregated presence for resource %r: %r" % (resource, resource, result))
+            defer.returnValue(result)
 
     @defer.inlineCallbacks
     def _removePresence(self, resource, tag):
@@ -269,11 +276,7 @@ class PresenceService(object):
     @defer.inlineCallbacks
     def _notifyWatchers(self, resource):
         debug("NOTIFY | %s | Notify watchers about resource %r presence." % (resource, resource))
-        presence_list = yield self._getAllPresence(resource)
-        if not presence_list:
-            self._sendPresence(resource, None)
-            defer.returnValue(None)
-        presence = max(presence_list, key=utils.presence_keyf)
+        presence = yield self._getAggregatedPresence(resource)
         self._sendPresence(resource, presence)
 
     def _sendPresence(self, resource, presence):
