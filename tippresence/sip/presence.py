@@ -128,7 +128,7 @@ class SIPPresence(SIPUA):
             yield self.removeWatcher(watcher)
         elif subscribe.dialog:
             watcher = subscribe.dialog.id
-            yield self.updateWatcher(watcher, expires)
+            yield self.updateWatcher(watcher, expires + 30)
             notify = yield self.createNotify(watcher, status='active', expires=expires, dialog=subscribe.dialog)
         else:
             if not subscribe.ruri.user:
@@ -136,7 +136,7 @@ class SIPPresence(SIPUA):
             resource = subscribe.ruri.user + '@' + subscribe.ruri.host
             yield self.createDialog(subscribe)
             watcher = subscribe.dialog.id
-            yield self.addWatcher(watcher, resource, expires)
+            yield self.addWatcher(watcher, resource, expires + 30)
             notify = yield self.createNotify(watcher, status='active', expires=expires, dialog=subscribe.dialog)
         response = subscribe.createResponse(200, 'OK')
         response.headers['Expires'] = str(expires)
