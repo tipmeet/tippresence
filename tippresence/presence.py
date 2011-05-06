@@ -278,7 +278,7 @@ class PresenceService(object):
     def _notifyWatchers(self, resource):
         debug("NOTIFY | %s | Notify watchers about resource %r presence." % (resource, resource))
         presence = yield self._getAggregatedPresence(resource)
-        if presence == self._notified_presence.get(resource):
+        if presence and presence == self._notified_presence.get(resource):
             debug("NOTIFY | %s | Watchers already notified about resource %r presence (%r)" %\
                     (resource, resource, presence))
             defer.returnValue(None)
