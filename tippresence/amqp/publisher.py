@@ -3,6 +3,7 @@
 import json
 
 from twisted.internet import defer, protocol
+from twisted.python import log
 
 from pkg_resources import resource_filename
 
@@ -12,6 +13,10 @@ from txamqp.content import Content
 import txamqp.spec
 
 SPECFILE = resource_filename(__name__, 'amqp0-8.xml')
+
+def debug(msg):
+    if __debug__:
+        log.msg(msg)
 
 class AMQPublisher(object):
     exchange_name = ''
@@ -57,6 +62,7 @@ class AMQFactory(protocol.ReconnectingClientFactory):
         if not self.channel:
             yield self._createChannel()
         content = Content(msg)
+        debug("AMQP | Publish message %r. Exchange: %r, routing_key: %r." % (msg, exchange, routing_key))
         yield self.channel.basic_publish(exchange=exchange, content=content, routing_key=routing_key)
 
     @defer.inlineCallbacks
