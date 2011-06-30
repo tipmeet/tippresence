@@ -45,6 +45,9 @@ class AMQFactory(protocol.ReconnectingClientFactory):
         delegate = TwistedDelegate()
         self.client = AMQClient(delegate=delegate, vhost=self.VHOST, spec=self.spec)
         self.client.start(self.creds)
+        if self.channel:
+            self.channel.close()
+            self.channel = None
         return self.client
 
     @defer.inlineCallbacks
