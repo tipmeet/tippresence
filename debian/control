@@ -1,0 +1,8 @@
+Source: tippresence
+Maintainer: ivaxer@imarto.net
+Standards-Version: 1.1.0
+
+Package: tippresence
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}, python-twisted-web, python-twisted, tipsip, python-txamqp
+Description: Presence Server (SIP/HTTP/AMQP interfaces) on Twisted Python
