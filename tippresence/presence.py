@@ -97,9 +97,19 @@ class PresenceService(object):
         debug("GET | %s:%s | Presence for resource %r with tag %r not found." %\
                 (resource, tag, resource, tag))
 
+    @defer.inlineCallbacks
     def dump(self):
+        debug("DUMP | Dump all presence...")
         self.stats_dump += 1
-        raise NotImplementedError
+        result = {}
+        resources = yield self.storage.sgetall(self._key_resources)
+        debug("DUMP | Received resources list: %r." % resources)
+        for resource in resources:
+            presence = yield self._getAggregatedPresence(resource)
+            debug("DUMP | Presence for resource %r: %r." % (resource, presence))
+            if presence:
+                result[resource] = presence
+        defer.returnValue(result)
 
     @defer.inlineCallbacks
     def remove(self, resource, tag):
