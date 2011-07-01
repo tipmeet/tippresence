@@ -99,7 +99,13 @@ class HTTPPresence(resource.Resource):
         return server.NOT_DONE_YET
 
     def dumpAllPresence(self, request):
-        raise NotImplementedError
+        def reply(result):
+            request.write(response("ok", "Success", result))
+            request.finish()
+
+        d = self.presence.dump()
+        d.addCallback(reply)
+        return server.NOT_DONE_YET
 
     def putPresence(self, request, resource, content, tag=None):
         def reply(tag):
