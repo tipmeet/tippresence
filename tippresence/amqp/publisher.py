@@ -2,8 +2,8 @@
 
 import json
 
-from twisted.internet import defer, protocol
-from twisted.python import log
+from twisted.internet import defer, protocol, error
+from twisted.python import log, failure
 
 from pkg_resources import resource_filename
 
@@ -40,6 +40,7 @@ class AMQFactory(protocol.ReconnectingClientFactory):
     VHOST = '/'
 
     def __init__(self, creds):
+        self.ConnectionDone = failure.Failure(error.ConnectionDone())
         self.spec = txamqp.spec.load(SPECFILE)
         self.creds = creds
         self.client = None
@@ -51,7 +52,7 @@ class AMQFactory(protocol.ReconnectingClientFactory):
         self.client = AMQClient(delegate=delegate, vhost=self.VHOST, spec=self.spec)
         self.client.start(self.creds)
         if self.channel:
-            self.channel.close()
+            self.channel.close(self.ConnectionDone)
             self.channel = None
         return self.client
 
