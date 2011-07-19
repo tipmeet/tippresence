@@ -38,9 +38,9 @@ class PresenceService(object):
         self.stats_active_presence = 0
 
     @defer.inlineCallbacks
-    def put(self, resource, status, expires=DEFAULT_EXPIRES, priority=0, tag=None):
-        debug("PUT | %s:%s | Received put request: resource %r, status %r, expires %r, priority %r, tag %r" %\
-                (resource, tag, resource, status, expires, priority, tag))
+    def put(self, resource, status, expires=DEFAULT_EXPIRES, priority=0, tag=None, type=None):
+        debug("PUT | %s:%s | Received put request: resource %r, status %r, expires %r, priority %r, tag %r, type %r" %\
+                (resource, tag, resource, status, expires, priority, tag, type))
         self.stats_put += 1
         if not tag:
             tag = utils.random_str(10)
@@ -53,7 +53,7 @@ class PresenceService(object):
             debug("PUT | %s:%s | Unknown status value: %r. Allowed statuses: %r. Raise exception." %\
                     (resource, tag, status, self.allowed_statuses))
             raise PresenceError("Unknown status value: %r. Allowed: %r" % (status, self.allowed_statuses))
-        presence = {"resource": resource, "tag": tag, "status": status, "expires": expires, "priority": priority}
+        presence = {"resource": resource, "tag": tag, "status": status, "expires": expires, "priority": priority, "type": type}
         yield self._storePresence(resource, tag, presence)
         self._setExpireTimer(resource, tag, expires)
         self._notifyWatchers(resource)
