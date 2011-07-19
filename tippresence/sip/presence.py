@@ -97,7 +97,7 @@ class SIPPresence(SIPUA):
             status = 'online'
         else:
             status = 'offline'
-        tag = yield self.presence_service.put(resource, status, expires, tag=tag)
+        tag = yield self.presence_service.put(resource, status, expires, tag=tag, type="sip")
         defer.returnValue(tag)
 
     @defer.inlineCallbacks
