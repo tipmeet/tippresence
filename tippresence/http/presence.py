@@ -32,7 +32,13 @@ class HTTPPresence(resource.Resource):
         debug("HTTP | Received GET request: %r" % request)
         path = self._filterPath(request.postpath)
         if len(path) == 1:
-            return self.getPresence(request, path[0])
+            full = False
+            if 'full' in request.args:
+                full = bool(request.args['full'][-1])
+            if full:
+                return self.getFullPresence(request, path[0])
+            else:
+                return self.getPresence(request, path[0])
         elif len(path) == 0:
             if not self.authenticate(request):
                 return response("failure", "Authentication required")
@@ -95,6 +101,14 @@ class HTTPPresence(resource.Resource):
             request.write(response("ok", "Success", {'presence': {'status': status}}))
             request.finish()
         d = self.presence.get(resource)
+        d.addCallback(reply)
+        return server.NOT_DONE_YET
+
+    def getFullPresence(self, request, resource):
+        def reply(presence):
+            request.write(response("ok", "Success", presence))
+            request.finish()
+        d = self.presence.get(resource, aggregated=False)
         d.addCallback(reply)
         return server.NOT_DONE_YET
 
